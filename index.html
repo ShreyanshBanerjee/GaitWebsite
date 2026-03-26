@@ -86,13 +86,13 @@
           clearInterval(interval);
           countdownButton.textContent = `Start Now`;
           showScreen(targetScreen);
-          startSensors(); // Actually start recording when screen switches
+          startSensors();
         }
       }, 1000);
     }
 
     async function fetchData(endpoint) {
-      const response = await fetch(`https://scndh-8-229-26-248.a.free.pinggy.link/${endpoint}`, {
+      const response = await fetch(`https://boimx-8-229-26-248.a.free.pinggy.link/${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
