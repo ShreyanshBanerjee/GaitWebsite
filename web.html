@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gait Detection App</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script>
+    let gyro = [[], [], []];
+    let accel = [[], [], []];
+    let heading = [[], [], []];
+    let startTime = null;
+    let deltaTime = 0;
+    let userAge = 0;
+    let collecting = false;
+    let general_prediction = null;
+    let specific_prediction = null;
+
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(el => el.classList.add('hidden'));
+      document.getElementById(id).classList.remove('hidden');
+    }
+
+    function startSensors() {
+      gyro = [[], [], []];
+      accel = [[], [], []];
+      heading = [[], [], []];
+      startTime = performance.now();
+      collecting = true;
+
+      window.addEventListener("devicemotion", handleMotion);
+      window.addEventListener("deviceorientation", handleOrientation);
+    }
+
+    function stopSensors() {
+      collecting = false;
+      deltaTime = (performance.now() - startTime) / 1000; // Store in seconds
+      window.removeEventListener("devicemotion", handleMotion);
+      window.removeEventListener("deviceorientation", handleOrientation);
+    }
+
+    function handleMotion(event) {
+      if (!collecting) return;
+      // Using .push() because .append() is not a JS array method
+      accel[0].push(event.acceleration?.x || 0);
+      accel[1].push(event.acceleration?.y || 0);
+      accel[2].push(event.acceleration?.z || 0);
+
+      gyro[0].push(event.rotationRate?.alpha || 0);
+      gyro[1].push(event.rotationRate?.beta || 0);
+      gyro[2].push(event.rotationRate?.gamma || 0);
+    }
+
+    function handleOrientation(event) {
+      if (!collecting) return;
+      heading[0].push(event.alpha || 0);
+      heading[1].push(event.beta || 0);
+      heading[2].push(event.gamma || 0);
+    }
+
+    function validateAndStart() {
+      const ageInput = document.getElementById("ageInput");
+      const ageError = document.getElementById("ageError");
+      const age = parseInt(ageInput.value);
+
+      if (!age || age < 1 || age > 120) {
+        ageError.classList.remove("hidden");
+        return;
+      }
+
+      ageError.classList.add("hidden");
+      userAge = age;
+      startCountdown('testing');
+    }
+
+    function startCountdown(targetScreen) {
+      let countdown = 3;
+      const countdownButton = document.getElementById("countdownButton");
+      const interval = setInterval(function() {
+        if (countdown > 0) {
+          countdownButton.textContent = `Starting in ${countdown}...`;
+          countdown--;
+        } else {
+          clearInterval(interval);
+          countdownButton.textContent = `Start Now`;
+          showScreen(targetScreen);
+          startSensors(); // Actually start recording when screen switches
+        }
+      }, 1000);
+    }
+
+    async function fetchData(endpoint) {
+      const response = await fetch(`http://scndh-8-229-26-248.a.free.pinggy.link/${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          gyr: gyro,
+          acc: accel,
+          mag: heading,
+          user: { duration: deltaTime, age: userAge }
+        })
+      });
+      return await response.json();
+    }
+
+    async function processResults() {
+      stopSensors();
+      showScreen('loading');
+
+      try {
+        // Call both APIs concurrently
+        const [gen, spec] = await Promise.all([
+          fetchData('predict_risk'), 
+          fetchData('predict_subtype')
+        ]);
+        
+        general_prediction = gen;
+        specific_prediction = spec;
+        
+        renderDashboard();
+        showScreen('dashboard');
+      } catch (error) {
+        console.error("API Error:", error);
+        alert("Failed to reach the server. Please ensure your backend is running.");
+        showScreen('main');
+      }
+    }
+
+    function renderDashboard() {
+      const resultsContainer = document.getElementById('conditions-list');
+      const descContainer = document.getElementById('description');
+      const mostLikely = document.getElementById('most-likely');
+      
+      resultsContainer.innerHTML = '';
+      
+      // General Risk UI
+      const genRow = document.createElement('div');
+      genRow.className = 'flex justify-between p-2 border-b font-bold text-gray-800';
+      genRow.innerHTML = `<span>General Risk</span><span>${general_prediction.risk} (${general_prediction.chance}%)</span>`;
+      resultsContainer.appendChild(genRow);
+
+      if (general_prediction.risk === "LOW") {
+        mostLikely.textContent = "Normal Gait";
+        descContainer.innerHTML = "LOW risk detected. Gait appears normal.";
+      } else {
+        mostLikely.textContent = specific_prediction.subtype;
+        let scoresHTML = '<div class="mt-2 text-sm space-y-1">';
+        for (const [name, prob] of Object.entries(specific_prediction.scores)) {
+          scoresHTML += `<div class="flex justify-between"><span>${name}:</span><span>${(prob * 100).toFixed(1)}%</span></div>`;
+        }
+        scoresHTML += '</div>';
+        resultsContainer.innerHTML += scoresHTML;
+        
+        descContainer.innerHTML = general_prediction.risk === "HIGH" 
+          ? "HIGH risk detected. It's recommended for you to contact a professional for more specific advice." 
+          : "MODERATE risk detected. It's recommended for you to consider contacting a professional for more specific advice.";
+      }
+    }
+
+    window.onload = () => showScreen('main');
+  </script>
+</head>
+<body class="bg-gray-300">
+  
+  <div id="main" class="screen hidden">
+    <div class="flex h-screen items-center justify-center">
+      <div class="mx-4 rounded-2xl bg-white p-6 shadow-md md:mx-8 md:p-8 lg:p-10 max-w-lg">
+        <div class="flex flex-col items-center gap-3">
+          <div class="text-3xl font-bold tracking-tight text-orange-400">Gait Detection App</div>
+          <p class="text-center text-gray-700">Take a 30-second AI-powered test to scan for various neurological conditions based on your walking patterns.</p>
+          <input id="ageInput" type="number" placeholder="Enter your age" class="mt-4 w-full rounded-lg border border-gray-300 p-3 text-center focus:ring-2 focus:ring-orange-400 outline-none" />
+          <div id="ageError" class="hidden text-sm text-red-500">Please enter a valid age.</div>
+          <button id="countdownButton" class="mt-5 w-full rounded-xl bg-green-500 px-6 py-3 text-lg font-medium text-white hover:bg-green-600 transition" onclick="validateAndStart()">Start Now</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="testing" class="screen hidden">
+    <div class="flex h-screen items-center justify-center">
+      <div class="mx-4 rounded-2xl bg-white p-6 shadow-md text-center">
+        <div class="text-3xl font-bold text-orange-400 animate-pulse">Recording...</div>
+        <p class="mt-4 text-gray-700">Walk 10 meters in a straight line with the phone in your hand.</p>
+        <button class="mt-8 rounded-xl bg-red-500 px-10 py-4 text-xl font-bold text-white hover:bg-red-600 transition" onclick="processResults()">End Test</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="loading" class="screen hidden">
+    <div class="flex h-screen items-center justify-center">
+      <div class="mx-4 rounded-2xl bg-white p-10 shadow-md text-center">
+        <div class="inline-block h-12 w-12 animate-spin rounded-full border-4 border-orange-400 border-t-transparent mb-4"></div>
+        <div class="text-2xl font-bold text-gray-800">Analyzing Data</div>
+        <p class="text-gray-500">Our AI is evaluating your gait parameters...</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="dashboard" class="screen hidden">
+    <div class="flex h-screen items-center justify-center">
+      <div class="mx-4 rounded-2xl bg-white p-6 shadow-md md:p-10 max-w-md w-full">
+        <div class="flex flex-col items-center">
+          <div class="text-3xl font-bold text-orange-400">Test Results</div>
+          <div id="conditions-list" class="w-full mt-6 bg-gray-50 rounded-lg p-4"></div>
+          <div class="mt-6 text-lg font-bold text-gray-800">Likely Condition: <span id="most-likely" class="text-orange-500"></span></div>
+          <div id="description" class="mt-3 rounded-lg bg-orange-50 p-4 text-sm text-gray-700 border border-orange-100"></div>
+          <button class="mt-8 w-full rounded-xl bg-blue-500 py-3 text-white font-bold hover:bg-blue-600" onclick="location.reload()">New Test</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
