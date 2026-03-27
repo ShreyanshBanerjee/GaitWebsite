@@ -139,7 +139,7 @@
         mostLikely.textContent = "Normal Gait";
         descContainer.innerHTML = "LOW risk detected. Gait appears normal.";
       } else {
-        mostLikely.textContent = specific_prediction.subtype || "Unknown";
+        mostLikely.textContent = specific_prediction.predicted_subtype || "Unknown";
         let scoresHTML = '<div class="mt-2 text-sm space-y-1">';
         
         const scores = specific_prediction.probability_scores || {};
@@ -161,7 +161,9 @@
       <div class="mx-4 rounded-2xl bg-white p-6 shadow-md max-w-lg">
         <div class="flex flex-col items-center gap-3">
           <div class="text-3xl font-bold text-orange-400">Gait Detection App</div>
-          <p class="text-center text-gray-700">Scan walking patterns for neurological insights.</p>
+          <p class="text-center text-gray-700">Take a quick 30-second AI-powered assesment to scan for neurological conditions such as Alzheimers and Parkinson's disease.</p>
+          <p class="text-center text-gray-700">Find an open area, enter your age below, and start the test. Keep your phone in your right hand and walk 10 meters in a straight line.</p>
+
           <input id="ageInput" type="number" placeholder="Enter your age" class="mt-4 w-full rounded-lg border border-gray-300 p-3 text-center" />
           <div id="ageError" class="hidden text-sm text-red-500">Please enter a valid age.</div>
           <button id="countdownButton" class="mt-5 w-full rounded-xl bg-green-500 px-6 py-3 text-white font-bold" onclick="validateAndStart()">Start Now</button>
@@ -175,7 +177,7 @@
       <div class="mx-4 rounded-2xl bg-white p-6 shadow-md text-center">
         <div class="text-3xl font-bold text-orange-400 animate-pulse">Recording...</div>
         <div id="data-counter" class="text-xl font-mono text-gray-400 mt-2">Samples: 0</div>
-        <p class="mt-4 text-gray-700">Walk 10 meters in a straight line now.</p>
+        <p class="mt-4 text-gray-700">Please walk 10 meters in a straight line with your phone in your hand.</p>
         <button class="mt-8 rounded-xl bg-red-500 px-10 py-4 text-xl font-bold text-white" onclick="processResults()">End Test</button>
       </div>
     </div>
