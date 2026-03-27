@@ -134,7 +134,7 @@
         renderDashboard();
         showScreen('dashboard');
       } catch (error) {
-        alert("API Error:", error);
+        alert("API Error: "+error.message);
         alert("Failed to reach the server. Please ensure you are connected to WiFi and your network administrator is not blocking requests.");
         showScreen('main');
       }
