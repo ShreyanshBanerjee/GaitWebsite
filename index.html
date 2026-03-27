@@ -132,7 +132,7 @@
       
       const genRow = document.createElement('div');
       genRow.className = 'flex justify-between p-2 border-b font-bold text-gray-800';
-      genRow.innerHTML = `<span>General Risk</span><span>${general_prediction.risk} (${general_prediction.chance}%)</span>`;
+      genRow.innerHTML = `<span>General Risk</span><span>${general_prediction.risk_level} (${general_prediction.score*100}%)</span>`;
       resultsContainer.appendChild(genRow);
 
       if (general_prediction.risk_level === "LOW") {
