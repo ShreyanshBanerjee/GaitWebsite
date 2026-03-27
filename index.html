@@ -135,20 +135,20 @@
       genRow.innerHTML = `<span>General Risk</span><span>${general_prediction.risk} (${general_prediction.chance}%)</span>`;
       resultsContainer.appendChild(genRow);
 
-      if (general_prediction.risk === "LOW") {
+      if (general_prediction.risk_level === "LOW") {
         mostLikely.textContent = "Normal Gait";
         descContainer.innerHTML = "LOW risk detected. Gait appears normal.";
       } else {
         mostLikely.textContent = specific_prediction.subtype || "Unknown";
         let scoresHTML = '<div class="mt-2 text-sm space-y-1">';
         
-        const scores = specific_prediction.scores || {};
+        const scores = specific_prediction.probability_scores || {};
         for (const [name, prob] of Object.entries(scores)) {
           scoresHTML += `<div class="flex justify-between"><span>${name}:</span><span>${(prob * 100).toFixed(1)}%</span></div>`;
         }
         scoresHTML += '</div>';
         resultsContainer.innerHTML += scoresHTML;
-        descContainer.innerHTML = general_prediction.risk === "HIGH" ? "HIGH risk detected. Consultation recommended." : "MODERATE risk detected. Professional advice recommended.";
+        descContainer.innerHTML = general_prediction.risk_level === "HIGH" ? "HIGH risk detected. It's recommended to visit a professional for proper screening." : "MODERATE risk detected. Consider visiting a professional for proper screening.";
       }
     }
 
