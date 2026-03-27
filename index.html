@@ -134,8 +134,8 @@
         renderDashboard();
         showScreen('dashboard');
       } catch (error) {
-        console.error("API Error:", error);
-        alert("Failed to reach the server. Please ensure your backend is running.");
+        alert("API Error:", error);
+        alert("Failed to reach the server. Please ensure you are connected to WiFi and your network administrator is not blocking requests.");
         showScreen('main');
       }
     }
