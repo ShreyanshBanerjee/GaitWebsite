@@ -60,7 +60,19 @@
       heading[2].push(event.gamma || 0);
     }
 
-    function validateAndStart() {
+    async function validateAndStart() {
+      if (typeof DeviceMotionEvent.requestPermission === 'function') {
+        try {
+          const permission = await DeviceMotionEvent.requestPermission();
+          if (permission !== 'granted') {
+            alert("Permission denied. We need sensor access to analyze your gait.");
+            return;
+          }
+        } catch (error) {
+          console.error("Sensor permission error:", error);
+          return;
+        }
+      }
       const ageInput = document.getElementById("ageInput");
       const ageError = document.getElementById("ageError");
       const age = parseInt(ageInput.value);
